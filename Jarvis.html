@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>J.A.R.V.I.S — Free Edition</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --arc:#00d4ff;--arc2:#0088cc;--arc-glow:rgba(0,212,255,0.4);
+  --gold:#ffd700;--red:#ff3333;--green:#00ff88;
+  --bg:#000810;--panel:rgba(0,20,40,0.85);--border:rgba(0,212,255,0.25);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--arc);font-family:'Rajdhani',sans-serif;min-height:100vh;overflow-x:hidden;cursor:crosshair;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,255,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.04) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.07) 2px,rgba(0,0,0,0.07) 4px);pointer-events:none;z-index:1;}
+#app{position:relative;z-index:2;min-height:100vh;display:flex;flex-direction:column;}
+
+/* HEADER */
+header{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-bottom:1px solid var(--border);background:rgba(0,5,15,0.95);backdrop-filter:blur(10px);}
+.logo{font-family:'Orbitron',monospace;font-size:20px;font-weight:900;letter-spacing:5px;color:var(--arc);text-shadow:0 0 20px var(--arc),0 0 40px var(--arc2);animation:pulse-logo 3s ease-in-out infinite;}
+@keyframes pulse-logo{0%,100%{text-shadow:0 0 20px var(--arc),0 0 40px var(--arc2)}50%{text-shadow:0 0 35px var(--arc),0 0 70px var(--arc2)}}
+.hdr-right{display:flex;gap:12px;align-items:center;font-family:'Share Tech Mono',monospace;font-size:11px;}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+.btn{background:transparent;border:1px solid var(--arc);color:var(--arc);padding:6px 14px;font-family:'Orbitron',monospace;font-size:10px;letter-spacing:2px;cursor:pointer;border-radius:3px;transition:all .2s;}
+.btn:hover{background:rgba(0,212,255,0.1);box-shadow:0 0 12px rgba(0,212,255,0.3);}
+.btn-gold{border-color:var(--gold);color:var(--gold);}
+.btn-gold:hover{background:rgba(255,215,0,0.1);}
+.btn-green{border-color:var(--green);color:var(--green);}
+.btn-green:hover{background:rgba(0,255,136,0.1);}
+.btn-red{border-color:var(--red);color:var(--red);}
+
+/* SETUP PANEL */
+#setup-panel{margin:12px 20px;background:rgba(0,15,30,0.95);border:1px solid var(--arc);border-radius:4px;padding:18px 22px;box-shadow:0 0 30px rgba(0,212,255,0.1);}
+.setup-title{font-family:'Orbitron',monospace;font-size:12px;letter-spacing:3px;color:var(--gold);margin-bottom:14px;text-shadow:0 0 10px rgba(255,215,0,0.4);}
+.setup-tabs{display:flex;gap:0;margin-bottom:14px;border:1px solid var(--border);border-radius:3px;overflow:hidden;}
+.setup-tab{flex:1;padding:7px;text-align:center;font-family:'Share Tech Mono',monospace;font-size:11px;cursor:pointer;color:rgba(0,212,255,0.5);transition:all .2s;background:transparent;border:none;}
+.setup-tab.active{background:rgba(0,212,255,0.15);color:var(--arc);}
+.tab-content{display:none;}.tab-content.active{display:block;}
+.field-row{display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap;}
+.field-label{font-size:11px;letter-spacing:1px;color:rgba(0,212,255,0.6);min-width:100px;font-family:'Share Tech Mono',monospace;}
+.field-input{flex:1;min-width:180px;background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.3);border-radius:3px;padding:7px 11px;color:var(--arc);font-family:'Share Tech Mono',monospace;font-size:12px;outline:none;transition:all .2s;}
+.field-input:focus{border-color:var(--arc);box-shadow:0 0 10px rgba(0,212,255,0.2);}
+.field-input::placeholder{color:rgba(0,212,255,0.25);}
+.hint{font-family:'Share Tech Mono',monospace;font-size:10px;color:rgba(0,212,255,0.4);margin-top:4px;line-height:1.6;}
+.hint a{color:var(--gold);text-decoration:none;}
+.hint a:hover{text-decoration:underline;}
+
+/* MAIN LAYOUT */
+.main-grid{flex:1;display:grid;grid-template-columns:260px 1fr 260px;gap:0;}
+
+/* PANELS */
+.panel{border:1px solid var(--border);background:var(--panel);backdrop-filter:blur(8px);padding:14px;position:relative;overflow:hidden;}
+.panel::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--arc),transparent);opacity:0.5;}
+.panel-title{font-family:'Orbitron',monospace;font-size:10px;letter-spacing:3px;color:rgba(0,212,255,0.55);margin-bottom:10px;text-transform:uppercase;border-bottom:1px solid rgba(0,212,255,0.08);padding-bottom:7px;}
+.corner-deco{position:absolute;width:14px;height:14px;border-color:var(--arc);border-style:solid;opacity:0.4;}
+.corner-tl{top:4px;left:4px;border-width:2px 0 0 2px;}.corner-tr{top:4px;right:4px;border-width:2px 2px 0 0;}
+.corner-bl{bottom:4px;left:4px;border-width:0 0 2px 2px;}.corner-br{bottom:4px;right:4px;border-width:0 2px 2px 0;}
+
+/* ARC REACTOR */
+.arc-reactor{width:110px;height:110px;margin:8px auto 16px;position:relative;display:flex;align-items:center;justify-content:center;}
+.arc-ring{position:absolute;border-radius:50%;border:2px solid;animation:spin-ring linear infinite;}
+.arc-ring:nth-child(1){width:110px;height:110px;border-color:rgba(0,212,255,0.15);animation-duration:22s;}
+.arc-ring:nth-child(2){width:88px;height:88px;border-color:rgba(0,212,255,0.3);border-style:dashed;animation-duration:11s;animation-direction:reverse;}
+.arc-ring:nth-child(3){width:66px;height:66px;border-color:rgba(0,212,255,0.5);animation-duration:6s;}
+.arc-ring:nth-child(4){width:44px;height:44px;border-color:var(--arc);animation-duration:3s;animation-direction:reverse;}
+@keyframes spin-ring{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.arc-core{width:26px;height:26px;border-radius:50%;background:radial-gradient(circle,#fff 0%,var(--arc) 45%,var(--arc2) 100%);box-shadow:0 0 20px var(--arc),0 0 40px var(--arc),0 0 60px rgba(0,212,255,0.4);animation:core-pulse 2s ease-in-out infinite;z-index:1;}
+@keyframes core-pulse{0%,100%{box-shadow:0 0 20px var(--arc),0 0 40px var(--arc)}50%{box-shadow:0 0 30px var(--arc),0 0 60px var(--arc),0 0 90px rgba(0,212,255,0.7)}}
+
+/* STATS */
+.stat-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:12px;}
+.stat-label{color:rgba(0,212,255,0.55);letter-spacing:1px;font-size:11px;}
+.stat-val{font-family:'Share Tech Mono',monospace;color:var(--arc);}
+.stat-bar{height:2px;background:rgba(0,212,255,0.08);border-radius:2px;margin-bottom:10px;overflow:hidden;}
+.stat-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--arc2),var(--arc));box-shadow:0 0 6px var(--arc);}
+
+/* AI SELECTOR */
+.ai-selector{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px;}
+.ai-btn{padding:7px 4px;text-align:center;cursor:pointer;border-radius:3px;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px;color:rgba(0,212,255,0.5);background:rgba(0,212,255,0.04);border:1px solid rgba(0,212,255,0.15);transition:all .2s;}
+.ai-btn.active{background:rgba(0,212,255,0.15);border-color:var(--arc);color:var(--arc);box-shadow:0 0 8px rgba(0,212,255,0.2);}
+.ai-btn:hover{border-color:var(--arc);color:var(--arc);}
+.ai-badge{display:inline-block;font-size:8px;padding:1px 4px;border-radius:2px;margin-left:3px;vertical-align:middle;}
+.free-badge{background:rgba(0,255,136,0.2);color:var(--green);border:1px solid rgba(0,255,136,0.3);}
+
+/* CENTER */
+.panel-center{border-left:1px solid var(--border);border-right:1px solid var(--border);display:flex;flex-direction:column;}
+#chat-log{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px;max-height:calc(100vh - 380px);min-height:200px;scrollbar-width:thin;scrollbar-color:rgba(0,212,255,0.2) transparent;}
+#chat-log::-webkit-scrollbar{width:3px;}
+#chat-log::-webkit-scrollbar-thumb{background:rgba(0,212,255,0.2);border-radius:2px;}
+
+.msg{display:flex;gap:8px;animation:msg-in .3s ease;}
+@keyframes msg-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.msg-user{flex-direction:row-reverse;}
+.msg-avatar{width:30px;height:30px;border-radius:50%;border:1px solid var(--arc);display:flex;align-items:center;justify-content:center;font-size:9px;font-family:'Orbitron',monospace;flex-shrink:0;background:rgba(0,212,255,0.08);}
+.msg-bubble{max-width:78%;padding:9px 12px;border-radius:4px;font-size:13px;line-height:1.65;border:1px solid rgba(0,212,255,0.12);background:rgba(0,20,40,0.8);}
+.msg-user .msg-bubble{background:rgba(0,40,80,0.8);border-color:rgba(0,212,255,0.25);text-align:right;}
+.msg-jarvis .msg-bubble{border-left:2px solid var(--arc);}
+.msg-system .msg-bubble{border-color:rgba(255,215,0,0.25);color:var(--gold);font-family:'Share Tech Mono',monospace;font-size:11px;}
+.msg-time{font-size:9px;color:rgba(0,212,255,0.25);font-family:'Share Tech Mono',monospace;margin-top:3px;}
+.ai-tag{font-family:'Share Tech Mono',monospace;font-size:9px;padding:1px 5px;border-radius:2px;margin-right:6px;}
+.tag-groq{background:rgba(255,140,0,0.15);color:#ff8c00;border:1px solid rgba(255,140,0,0.3);}
+.tag-gemini{background:rgba(66,133,244,0.15);color:#4285f4;border:1px solid rgba(66,133,244,0.3);}
+.tag-hf{background:rgba(255,215,0,0.15);color:var(--gold);border:1px solid rgba(255,215,0,0.3);}
+
+.thinking-dots span{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--arc);margin:0 2px;animation:think 1.2s ease-in-out infinite;}
+.thinking-dots span:nth-child(2){animation-delay:.2s}.thinking-dots span:nth-child(3){animation-delay:.4s}
+@keyframes think{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-5px);opacity:1}}
+
+/* INPUT */
+.input-zone{padding:10px;border-top:1px solid var(--border);background:rgba(0,5,15,0.9);}
+.quick-row{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:7px;}
+.qbtn{padding:5px 9px;border:1px solid rgba(0,212,255,0.15);background:rgba(0,212,255,0.04);border-radius:3px;font-size:10px;font-family:'Share Tech Mono',monospace;color:rgba(0,212,255,0.6);cursor:pointer;transition:all .2s;white-space:nowrap;}
+.qbtn:hover{border-color:var(--arc);color:var(--arc);background:rgba(0,212,255,0.1);}
+.input-row{display:flex;gap:8px;align-items:flex-end;}
+#user-input{flex:1;background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.22);border-radius:3px;padding:9px 12px;color:var(--arc);font-family:'Rajdhani',sans-serif;font-size:14px;outline:none;resize:none;max-height:110px;min-height:42px;transition:all .2s;}
+#user-input:focus{border-color:var(--arc);box-shadow:0 0 12px rgba(0,212,255,0.12);}
+#user-input::placeholder{color:rgba(0,212,255,0.28);}
+.icon-btn{width:42px;height:42px;border-radius:50%;background:transparent;border:2px solid rgba(0,212,255,0.35);color:var(--arc);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;}
+.icon-btn:hover{border-color:var(--arc);box-shadow:0 0 12px rgba(0,212,255,0.25);}
+.icon-btn.listening{border-color:var(--red);color:var(--red);box-shadow:0 0 12px rgba(255,51,51,0.5);animation:vpulse 1s infinite;}
+@keyframes vpulse{0%,100%{box-shadow:0 0 12px rgba(255,51,51,0.5)}50%{box-shadow:0 0 24px rgba(255,51,51,0.8)}}
+
+/* RIGHT PANEL */
+.ticker-item{display:flex;justify-content:space-between;align-items:center;padding:7px 9px;background:rgba(0,212,255,0.03);border:1px solid rgba(0,212,255,0.1);border-radius:3px;font-family:'Share Tech Mono',monospace;font-size:11px;cursor:pointer;transition:all .2s;margin-bottom:5px;}
+.ticker-item:hover{border-color:rgba(0,212,255,0.3);background:rgba(0,212,255,0.07);}
+.ticker-sym{color:var(--arc);font-weight:bold;}
+.up{color:var(--green)}.down{color:var(--red)}
+.cmd-item{padding:6px 9px;border:1px solid rgba(0,212,255,0.12);background:rgba(0,212,255,0.03);border-radius:3px;font-size:10px;font-family:'Share Tech Mono',monospace;color:rgba(0,212,255,0.6);cursor:pointer;transition:all .2s;margin-bottom:5px;letter-spacing:.5px;}
+.cmd-item:hover{border-color:var(--arc);color:var(--arc);background:rgba(0,212,255,0.08);}
+
+/* BOTTOM */
+.bottom-bar{display:flex;align-items:center;justify-content:space-between;padding:6px 20px;border-top:1px solid var(--border);background:rgba(0,2,10,0.97);font-family:'Share Tech Mono',monospace;font-size:10px;color:rgba(0,212,255,0.35);flex-wrap:wrap;gap:6px;}
+.bdot{width:5px;height:5px;border-radius:50%;display:inline-block;margin-right:5px;}
+
+/* TOAST */
+#toast{position:fixed;bottom:55px;right:20px;z-index:200;background:rgba(0,20,40,0.97);border:1px solid var(--arc);padding:10px 18px;border-radius:4px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--arc);box-shadow:0 0 20px rgba(0,212,255,0.25);transform:translateY(16px);opacity:0;transition:all .3s;pointer-events:none;max-width:300px;}
+#toast.show{transform:translateY(0);opacity:1;}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:300;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.modal-overlay.open{display:flex;}
+.modal{background:rgba(0,12,28,0.98);border:1px solid var(--arc);border-radius:5px;padding:24px;max-width:480px;width:92%;box-shadow:0 0 50px rgba(0,212,255,0.2);}
+.modal h2{font-family:'Orbitron',monospace;font-size:12px;letter-spacing:3px;color:var(--gold);margin-bottom:14px;}
+.modal p{font-size:13px;color:rgba(0,212,255,0.7);line-height:1.7;margin-bottom:10px;}
+.modal code{background:rgba(0,212,255,0.1);padding:1px 5px;border-radius:2px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--gold);}
+
+/* WAVEFORM */
+#waveform-canvas{width:100%;height:36px;display:block;}
+
+/* SPEAKING */
+#speaking-bar{display:none;padding:6px 10px;border-top:1px solid var(--border);}
+.sbar-anim{display:flex;gap:3px;align-items:flex-end;height:18px;}
+.sbar-anim div{width:3px;background:var(--arc);border-radius:2px;}
+@keyframes sbar{0%,100%{height:3px}50%{height:16px}}
+
+::-webkit-scrollbar{width:3px;}::-webkit-scrollbar-thumb{background:rgba(0,212,255,0.15);border-radius:2px;}
+@media(max-width:860px){.main-grid{grid-template-columns:1fr;}.panel-left,.panel-right{display:none;}.panel-center{border:none;}}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- HEADER -->
+<header>
+  <div class="logo">J.A.R.V.I.S <span style="font-size:11px;letter-spacing:2px;color:var(--green);font-weight:400;">FREE</span></div>
+  <div class="hdr-right">
+    <div class="status-dot" id="status-dot"></div>
+    <span id="status-txt" style="color:var(--green);letter-spacing:2px;">ONLINE</span>
+    <span style="color:rgba(0,212,255,0.2)">|</span>
+    <span id="active-ai-badge" style="color:var(--gold);">SELECT AI</span>
+    <span style="color:rgba(0,212,255,0.2)">|</span>
+    <span id="clock">--:--:--</span>
+  </div>
+  <div style="display:flex;gap:7px;">
+    <button class="btn" onclick="openModal('help-modal')">HELP</button>
+    <button class="btn btn-gold" onclick="openModal('keys-modal')">⚙ KEYS</button>
+  </div>
+</header>
+
+<!-- SETUP TABS -->
+<div id="setup-panel">
+  <div class="setup-title">⚡ FREE AI ENGINE — SELECT PROVIDER & ENTER API KEY</div>
+  <div class="setup-tabs">
+    <button class="setup-tab active" onclick="switchTab('groq')">🟠 GROQ</button>
+    <button class="setup-tab" onclick="switchTab('gemini')">🔵 GEMINI</button>
+    <button class="setup-tab" onclick="switchTab('hf')">🟡 HUGGINGFACE</button>
+  </div>
+
+  <div id="tab-groq" class="tab-content active">
+    <div class="field-row">
+      <span class="field-label">GROQ KEY</span>
+      <input class="field-input" type="password" id="groq-key" placeholder="gsk_...">
+    </div>
+    <div class="hint">
+      ✅ Free tier: ~14,400 requests/day • Llama 3.3 70B • Blazing fast<br>
+      🔗 Get free key: <a href="https://console.groq.com" target="_blank">console.groq.com</a> → Sign up → API Keys → Create Key
+    </div>
+  </div>
+
+  <div id="tab-gemini" class="tab-content">
+    <div class="field-row">
+      <span class="field-label">GEMINI KEY</span>
+      <input class="field-input" type="password" id="gemini-key" placeholder="AIza...">
+    </div>
+    <div class="hint">
+      ✅ Free tier: 15 req/min, 1M tokens/day • Gemini 1.5 Flash<br>
+      🔗 Get free key: <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com</a> → Create API Key (free)
+    </div>
+  </div>
+
+  <div id="tab-hf" class="tab-content">
+    <div class="field-row">
+      <span class="field-label">HF TOKEN</span>
+      <input class="field-input" type="password" id="hf-key" placeholder="hf_...">
+    </div>
+    <div class="hint">
+      ✅ Free tier: Mistral 7B, Llama models • Community access<br>
+      🔗 Get free token: <a href="https://huggingface.co/settings/tokens" target="_blank">huggingface.co/settings/tokens</a> → New token → Read role
+    </div>
+  </div>
+
+  <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
+    <button class="btn btn-green" onclick="saveKeys()">⚡ ACTIVATE JARVIS</button>
+    <button class="btn" onclick="document.getElementById('setup-panel').style.display='none'">DISMISS</button>
+    <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:rgba(0,212,255,0.35);margin-left:8px;align-self:center;">Keys stay in your browser only. Never stored on any server.</span>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main-grid">
+
+  <!-- LEFT -->
+  <div class="panel" style="border-right:none;">
+    <div class="corner-deco corner-tl"></div><div class="corner-deco corner-tr"></div>
+    <div class="corner-deco corner-bl"></div><div class="corner-deco corner-br"></div>
+
+    <div class="arc-reactor">
+      <div class="arc-ring"></div><div class="arc-ring"></div>
+      <div class="arc-ring"></div><div class="arc-ring"></div>
+      <div class="arc-core"></div>
+    </div>
+
+    <div class="panel-title">◈ SYSTEM STATUS</div>
+    <div class="stat-row"><span class="stat-label">POWER</span><span class="stat-val">99.8%</span></div>
+    <div class="stat-bar"><div class="stat-fill" style="width:99.8%"></div></div>
+    <div class="stat-row"><span class="stat-label">NEURAL NET</span><span class="stat-val" id="s-nn">86.4%</span></div>
+    <div class="stat-bar"><div class="stat-fill" id="sfill-nn" style="width:86.4%"></div></div>
+    <div class="stat-row"><span class="stat-label">MEMORY</span><span class="stat-val" id="s-mem">61.2%</span></div>
+    <div class="stat-bar"><div class="stat-fill" id="sfill-mem" style="width:61.2%"></div></div>
+    <div class="stat-row"><span class="stat-label">API STATUS</span><span class="stat-val" id="s-api" style="color:var(--red)">NO KEY</span></div>
+    <div class="stat-bar"><div class="stat-fill" id="sfill-api" style="width:0%;background:var(--green);box-shadow:0 0 6px var(--green);"></div></div>
+
+    <div class="panel-title" style="margin-top:14px;">◈ AI ENGINE</div>
+    <div class="ai-selector" id="ai-selector">
+      <div class="ai-btn" data-ai="groq" onclick="setAI('groq')">GROQ<br><span class="ai-badge free-badge">FREE</span></div>
+      <div class="ai-btn" data-ai="gemini" onclick="setAI('gemini')">GEMINI<br><span class="ai-badge free-badge">FREE</span></div>
+      <div class="ai-btn" data-ai="hf" onclick="setAI('hf')">HF<br><span class="ai-badge free-badge">FREE</span></div>
+      <div class="ai-btn" data-ai="auto" onclick="setAI('auto')">AUTO<br><span style="font-size:8px;color:rgba(0,212,255,0.4)">SMART</span></div>
+    </div>
+
+    <div class="panel-title" style="margin-top:14px;">◈ VOICE</div>
+    <canvas id="waveform-canvas"></canvas>
+    <div style="display:flex;gap:7px;margin-top:8px;">
+      <button class="btn btn-green" style="font-size:9px;padding:5px 10px;" onclick="toggleVoice()">🎤 VOICE</button>
+      <button class="btn" style="font-size:9px;padding:5px 10px;" onclick="toggleTTS()" id="tts-toggle-btn">🔊 TTS OFF</button>
+    </div>
+    <div id="voice-status" style="font-family:'Share Tech Mono',monospace;font-size:10px;color:rgba(0,212,255,0.4);margin-top:5px;">STANDBY</div>
+
+    <div class="panel-title" style="margin-top:14px;">◈ SESSION</div>
+    <div id="session-info" style="font-family:'Share Tech Mono',monospace;font-size:10px;color:rgba(0,212,255,0.45);line-height:1.9;">
+      MESSAGES: 0<br>ENGINE: --<br>STATUS: IDLE
+    </div>
+  </div>
+
+  <!-- CENTER -->
+  <div class="panel panel-center">
+    <div style="padding:8px 10px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-family:'Orbitron',monospace;font-size:10px;letter-spacing:3px;color:rgba(0,212,255,0.6);">◈ COMMAND INTERFACE</span>
+      <button class="btn" style="font-size:9px;padding:3px 9px;" onclick="clearChat()">CLEAR</button>
+    </div>
+
+    <div id="chat-log"></div>
+
+    <div id="speaking-bar">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--arc);margin-bottom:3px;">◈ JARVIS SPEAKING...</div>
+      <div class="sbar-anim" id="sbars"></div>
+    </div>
+
+    <div class="input-zone">
+      <div class="quick-row">
+        <button class="qbtn" onclick="q('Latest stock market news and top movers today')">📈 Markets</button>
+        <button class="qbtn" onclick="q('Bitcoin price analysis and trading prediction')">₿ BTC Signal</button>
+        <button class="qbtn" onclick="q('What is the weather like today?')">🌤 Weather</button>
+        <button class="qbtn" onclick="q('Top AI news today')">🤖 AI News</button>
+        <button class="qbtn" onclick="q('Give me a morning briefing: news, markets, weather')">📋 Briefing</button>
+        <button class="qbtn" onclick="q('Write a Python script to automate renaming files in a folder')">🐍 Code</button>
+      </div>
+      <div class="input-row">
+        <button class="icon-btn" id="mic-btn" onclick="toggleVoice()" title="Voice (Alt+V)">🎤</button>
+        <textarea id="user-input" placeholder="Awaiting your command, sir..." rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+        <button class="icon-btn" onclick="sendMsg()" title="Send" style="border-radius:4px;font-size:14px;">▶</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="panel" style="border-left:none;">
+    <div class="corner-deco corner-tl"></div><div class="corner-deco corner-tr"></div>
+    <div class="corner-deco corner-bl"></div><div class="corner-deco corner-br"></div>
+
+    <div class="panel-title">◈ MARKET INTEL</div>
+    <div id="tickers"></div>
+    <button class="btn btn-gold" style="width:100%;font-size:9px;margin-top:4px;" onclick="q('Full market analysis: top stocks, crypto, forex opportunities today with buy/sell signals')">⚡ MARKET SCAN</button>
+
+    <div class="panel-title" style="margin-top:14px;">◈ QUICK OPS</div>
+    <div class="cmd-item" onclick="q('How do I automate tasks on Windows 11? Give me PowerShell scripts')">🖥 Windows Automation</div>
+    <div class="cmd-item" onclick="q('How to control or automate my Android phone using ADB or apps?')">📱 Android Control</div>
+    <div class="cmd-item" onclick="q('Give me a detailed trading strategy for today with risk management')">💹 Trade Strategy</div>
+    <div class="cmd-item" onclick="q('Search and summarize the latest world news')">🌐 World News</div>
+    <div class="cmd-item" onclick="q('Explain machine learning in simple terms with examples')">🧠 Explain AI</div>
+    <div class="cmd-item" onclick="q('Write me a bash script to automate system backups on Linux')">🐧 Linux Scripts</div>
+
+    <div class="panel-title" style="margin-top:14px;">◈ FREE TIER LIMITS</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:rgba(0,212,255,0.45);line-height:1.9;">
+      GROQ: 14,400 req/day<br>
+      GEMINI: 1M tok/day<br>
+      HF: Community tier<br>
+      <span style="color:var(--green)">ALL 100% FREE ✓</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- BOTTOM BAR -->
+<div class="bottom-bar">
+  <span><span class="bdot" style="background:var(--green)"></span>JARVIS FREE v4.0</span>
+  <span><span class="bdot" style="background:var(--arc)"></span>ENGINE: <span id="b-engine">--</span></span>
+  <span><span class="bdot" style="background:var(--gold)"></span>VOICE: <span id="b-voice">STANDBY</span></span>
+  <span><span class="bdot" style="background:var(--arc)"></span>TTS: <span id="b-tts">OFF</span></span>
+  <span id="b-date"></span>
+</div>
+</div><!-- /app -->
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- HELP MODAL -->
+<div class="modal-overlay" id="help-modal">
+  <div class="modal">
+    <h2>◈ JARVIS FREE — HOW TO USE</h2>
+    <p>🆓 <strong>100% Free:</strong> Uses <code>Groq</code>, <code>Google Gemini</code>, and <code>HuggingFace</code> — all have generous free tiers.</p>
+    <p>🔑 <strong>Get Keys (free):</strong><br>
+      • Groq: <code>console.groq.com</code> → Sign up → API Keys<br>
+      • Gemini: <code>aistudio.google.com</code> → Get API Key<br>
+      • HuggingFace: <code>huggingface.co/settings/tokens</code>
+    </p>
+    <p>🎤 <strong>Voice:</strong> Click mic or <code>Alt+V</code>. Works in Chrome/Edge.</p>
+    <p>🔊 <strong>TTS:</strong> Toggle speaker button — JARVIS speaks back to you.</p>
+    <p>📈 <strong>Trading:</strong> Ask for stock/crypto analysis. JARVIS provides AI-powered predictions.</p>
+    <p>🖥 <strong>Automation:</strong> Ask for Windows/Android automation scripts — JARVIS writes real code.</p>
+    <p>⌨️ <code>Enter</code> = send · <code>Shift+Enter</code> = newline · <code>Alt+V</code> = voice · <code>Esc</code> = close</p>
+    <div style="margin-top:14px;"><button class="btn" onclick="closeModal('help-modal')">CLOSE</button></div>
+  </div>
+</div>
+
+<!-- KEYS MODAL -->
+<div class="modal-overlay" id="keys-modal">
+  <div class="modal">
+    <h2>⚙ API KEY MANAGER</h2>
+    <div class="field-row"><span class="field-label">GROQ KEY</span><input class="field-input" type="password" id="groq-key-m" placeholder="gsk_..."></div>
+    <div class="hint" style="margin-bottom:10px;">Free: <a href="https://console.groq.com" target="_blank" style="color:var(--gold)">console.groq.com</a></div>
+    <div class="field-row"><span class="field-label">GEMINI KEY</span><input class="field-input" type="password" id="gemini-key-m" placeholder="AIza..."></div>
+    <div class="hint" style="margin-bottom:10px;">Free: <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--gold)">aistudio.google.com</a></div>
+    <div class="field-row"><span class="field-label">HF TOKEN</span><input class="field-input" type="password" id="hf-key-m" placeholder="hf_..."></div>
+    <div class="hint" style="margin-bottom:14px;">Free: <a href="https://huggingface.co/settings/tokens" target="_blank" style="color:var(--gold)">huggingface.co/settings/tokens</a></div>
+    <p style="font-size:11px;">TTS Voice:</p>
+    <select id="voice-sel" style="background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.3);color:var(--arc);padding:6px;border-radius:3px;width:100%;margin-bottom:14px;font-family:'Share Tech Mono',monospace;font-size:11px;"></select>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-green" onclick="saveKeysModal()">SAVE</button>
+      <button class="btn btn-red" onclick="clearAllKeys()">CLEAR ALL</button>
+      <button class="btn" onclick="closeModal('keys-modal')">CANCEL</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+// JARVIS FREE — CORE
+// ════════════════════════════════════════
+const S = {
+  groqKey:'', geminiKey:'', hfKey:'',
+  activeAI:'auto',
+  tts:false, listening:false,
+  msgs:[], msgCount:0,
+  persona:'jarvis', selectedVoice:'',
+};
+
+const SYSTEM = `You are J.A.R.V.I.S (Just A Rather Very Intelligent System), Tony Stark's AI. You are sophisticated, intelligent, slightly formal with dry wit. Address user as "sir". Be highly capable: give real trading signals (BUY/SELL/HOLD with reasoning), write actual working code for automation, answer any question comprehensively. For trading always include: current trend, signal, entry/exit points, risk level. Start important responses with a status prefix. Be concise but thorough.`;
+
+const GROQ_MODELS = ['llama-3.3-70b-versatile','llama-3.1-8b-instant','mixtral-8x7b-32768'];
+const HF_MODEL = 'mistralai/Mistral-7B-Instruct-v0.3';
+
+// ── Clock ──
+function tick(){
+  const n=new Date();
+  document.getElementById('clock').textContent=n.toTimeString().slice(0,8);
+  document.getElementById('b-date').textContent=n.toDateString().toUpperCase();
+  if(Math.random()<0.08){
+    const nn=(84+Math.random()*12).toFixed(1);
+    document.getElementById('s-nn').textContent=nn+'%';
+    document.getElementById('sfill-nn').style.width=nn+'%';
+    const m=(58+Math.random()*24).toFixed(1);
+    document.getElementById('s-mem').textContent=m+'%';
+    document.getElementById('sfill-mem').style.width=m+'%';
+  }
+}
+setInterval(tick,1000); tick();
+
+// ── Tabs (setup) ──
+let activeTab='groq';
+function switchTab(t){
+  activeTab=t;
+  document.querySelectorAll('.setup-tab').forEach((b,i)=>b.classList.toggle('active',['groq','gemini','hf'][i]===t));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');
+}
+
+// ── Toast ──
+function toast(m,d=3000){const e=document.getElementById('toast');e.textContent=m;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),d);}
+
+// ── Modal ──
+function openModal(id){
+  document.getElementById(id).classList.add('open');
+  if(id==='keys-modal'){
+    document.getElementById('groq-key-m').value=S.groqKey;
+    document.getElementById('gemini-key-m').value=S.geminiKey;
+    document.getElementById('hf-key-m').value=S.hfKey;
+    loadVoices();
+  }
+}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.modal-overlay.open').forEach(m=>m.classList.remove('open'));});
+
+// ── Keys ──
+function saveKeys(){
+  const g=document.getElementById('groq-key').value.trim();
+  const gm=document.getElementById('gemini-key').value.trim();
+  const h=document.getElementById('hf-key').value.trim();
+  if(g)S.groqKey=g; if(gm)S.geminiKey=gm; if(h)S.hfKey=h;
+  if(!g&&!gm&&!h){toast('⚠ Enter at least one API key'); return;}
+  document.getElementById('setup-panel').style.display='none';
+  updateAPIStatus(true);
+  // Auto-select best available
+  if(S.groqKey) setAI('groq');
+  else if(S.geminiKey) setAI('gemini');
+  else setAI('hf');
+  toast('⚡ JARVIS ACTIVATED — All systems online');
+  appendMsg('system','Systems online. Free AI engine active. How can I assist you today, sir?');
+}
+function saveKeysModal(){
+  const g=document.getElementById('groq-key-m').value.trim();
+  const gm=document.getElementById('gemini-key-m').value.trim();
+  const h=document.getElementById('hf-key-m').value.trim();
+  if(g)S.groqKey=g; if(gm)S.geminiKey=gm; if(h)S.hfKey=h;
+  const vs=document.getElementById('voice-sel');
+  if(vs.value)S.selectedVoice=vs.value;
+  updateAPIStatus(!!(g||gm||h));
+  closeModal('keys-modal'); toast('✓ Configuration saved');
+}
+function clearAllKeys(){S.groqKey='';S.geminiKey='';S.hfKey='';updateAPIStatus(false);closeModal('keys-modal');toast('Keys cleared');}
+function updateAPIStatus(active){
+  const el=document.getElementById('s-api');
+  const fill=document.getElementById('sfill-api');
+  el.textContent=active?'ACTIVE':'NO KEY';
+  el.style.color=active?'var(--green)':'var(--red)';
+  fill.style.width=active?'100%':'0%';
+}
+
+// ── AI Mode ──
+function setAI(ai){
+  S.activeAI=ai;
+  document.querySelectorAll('.ai-btn').forEach(b=>b.classList.toggle('active',b.dataset.ai===ai));
+  const labels={groq:'GROQ LLAMA',gemini:'GEMINI FLASH',hf:'MISTRAL 7B',auto:'AUTO SELECT'};
+  document.getElementById('active-ai-badge').textContent=labels[ai]||ai.toUpperCase();
+  document.getElementById('b-engine').textContent=labels[ai]||ai.toUpperCase();
+  toast('◈ Engine: '+labels[ai]);
+}
+
+// ── Chat ──
+function fmt(t){
+  return t.replace(/\*\*(.*?)\*\*/g,'<strong style="color:var(--gold)">$1</strong>')
+          .replace(/`(.*?)`/g,'<code style="background:rgba(0,212,255,0.1);padding:1px 5px;border-radius:2px;font-family:\'Share Tech Mono\',monospace;font-size:11px;color:var(--gold);">$1</code>')
+          .replace(/\n/g,'<br>');
+}
+
+function tagFor(ai){
+  if(ai==='groq') return '<span class="ai-tag tag-groq">GROQ</span>';
+  if(ai==='gemini') return '<span class="ai-tag tag-gemini">GEMINI</span>';
+  if(ai==='hf') return '<span class="ai-tag tag-hf">HF</span>';
+  return '';
+}
+
+function appendMsg(role,text,ai=''){
+  const log=document.getElementById('chat-log');
+  const time=new Date().toTimeString().slice(0,8);
+  const d=document.createElement('div');
+  d.className='msg msg-'+role;
+  const av=role==='user'?'SIR':(role==='system'?'⚡':'JAR');
+  const tag=role==='jarvis'?tagFor(ai):'';
+  d.innerHTML=`<div class="msg-avatar">${av}</div><div><div class="msg-bubble">${tag}${fmt(text)}</div><div class="msg-time">${time}</div></div>`;
+  log.appendChild(d); log.scrollTop=log.scrollHeight;
+  S.msgCount++;
+  document.getElementById('session-info').innerHTML=`MESSAGES: ${S.msgCount}<br>ENGINE: ${S.activeAI.toUpperCase()}<br>STATUS: ACTIVE`;
+}
+
+function showThinking(){
+  const log=document.getElementById('chat-log');
+  const d=document.createElement('div');
+  d.className='msg msg-jarvis'; d.id='thinking';
+  d.innerHTML='<div class="msg-avatar">JAR</div><div><div class="msg-bubble"><div class="thinking-dots"><span></span><span></span><span></span></div></div></div>';
+  log.appendChild(d); log.scrollTop=log.scrollHeight;
+}
+function hideThinking(){const t=document.getElementById('thinking');if(t)t.remove();}
+
+// ── Send ──
+async function sendMsg(){
+  const inp=document.getElementById('user-input');
+  const text=inp.value.trim(); if(!text)return;
+  const hasKey=S.groqKey||S.geminiKey||S.hfKey;
+  if(!hasKey){toast('⚠ Please enter a free API key first'); openModal('keys-modal'); return;}
+  inp.value=''; inp.style.height='auto';
+  appendMsg('user',text);
+  S.msgs.push({role:'user',content:text});
+  showThinking();
+  try{
+    const {text:resp,ai}=await callAI(text);
+    hideThinking();
+    appendMsg('jarvis',resp,ai);
+    S.msgs.push({role:'assistant',content:resp});
+    if(S.tts)speak(resp);
+  }catch(err){
+    hideThinking();
+    appendMsg('jarvis','⚠ Error: '+err.message+'. Check your API key or try a different AI engine.');
+  }
+}
+
+async function callAI(text){
+  const ai=resolveAI();
+  if(ai==='groq') return {text:await callGroq(text),ai:'groq'};
+  if(ai==='gemini') return {text:await callGemini(text),ai:'gemini'};
+  if(ai==='hf') return {text:await callHF(text),ai:'hf'};
+  throw new Error('No AI engine available');
+}
+
+function resolveAI(){
+  if(S.activeAI!=='auto') return S.activeAI;
+  if(S.groqKey) return 'groq';
+  if(S.geminiKey) return 'gemini';
+  if(S.hfKey) return 'hf';
+  return null;
+}
+
+async function callGroq(text){
+  const history=S.msgs.slice(-12);
+  const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+S.groqKey},
+    body:JSON.stringify({model:GROQ_MODELS[0],max_tokens:1200,messages:[{role:'system',content:SYSTEM},...history]})
+  });
+  if(!res.ok){const e=await res.json().catch(()=>({})); throw new Error(e.error?.message||'Groq error '+res.status);}
+  const d=await res.json();
+  return d.choices[0]?.message?.content||'No response.';
+}
+
+async function callGemini(text){
+  const history=S.msgs.slice(-10);
+  const contents=history.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:m.content}]}));
+  const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${S.geminiKey}`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      system_instruction:{parts:[{text:SYSTEM}]},
+      contents,
+      generationConfig:{maxOutputTokens:1200,temperature:0.7}
+    })
+  });
+  if(!res.ok){const e=await res.json().catch(()=>({})); throw new Error(e.error?.message||'Gemini error '+res.status);}
+  const d=await res.json();
+  return d.candidates?.[0]?.content?.parts?.[0]?.text||'No response.';
+}
+
+async function callHF(text){
+  const recent=S.msgs.slice(-6).map(m=>(m.role==='user'?'[INST]'+m.content+'[/INST]':m.content)).join('\n');
+  const prompt=`<s>${SYSTEM}\n${recent}\n[INST]${text}[/INST]`;
+  const res=await fetch(`https://api-inference.huggingface.co/models/${HF_MODEL}`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+S.hfKey},
+    body:JSON.stringify({inputs:prompt,parameters:{max_new_tokens:800,temperature:0.7,return_full_text:false}})
+  });
+  if(!res.ok){const e=await res.json().catch(()=>({})); throw new Error(e.error||'HuggingFace error '+res.status);}
+  const d=await res.json();
+  if(Array.isArray(d)) return d[0]?.generated_text||'No response.';
+  if(d.error) throw new Error(d.error);
+  return d.generated_text||'No response.';
+}
+
+// ── Quick cmd ──
+function q(cmd){document.getElementById('user-input').value=cmd; sendMsg();}
+function clearChat(){document.getElementById('chat-log').innerHTML='';S.msgs=[];S.msgCount=0;document.getElementById('session-info').innerHTML='MESSAGES: 0<br>ENGINE: --<br>STATUS: IDLE';toast('◈ Chat cleared');}
+
+// ── Input ──
+function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}}
+function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,110)+'px';}
+document.addEventListener('keydown',e=>{if(e.altKey&&e.key==='v'){e.preventDefault();toggleVoice();}});
+
+// ── Voice ──
+let recognition=null;
+function initSpeech(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){toast('⚠ Voice requires Chrome or Edge browser');return null;}
+  const r=new SR(); r.continuous=false; r.interimResults=true; r.lang='en-US';
+  r.onresult=e=>{
+    const t=Array.from(e.results).map(r=>r[0].transcript).join('');
+    document.getElementById('user-input').value=t;
+    if(e.results[e.results.length-1].isFinal){document.getElementById('voice-status').textContent='PROCESSING...';setTimeout(()=>sendMsg(),400);}
+  };
+  r.onend=()=>{S.listening=false;updateVoiceUI();};
+  r.onerror=e=>{S.listening=false;updateVoiceUI();toast('⚠ Voice: '+e.error);};
+  return r;
+}
+function toggleVoice(){
+  if(!recognition)recognition=initSpeech();
+  if(!recognition)return;
+  if(S.listening){recognition.stop();S.listening=false;}
+  else{try{recognition.start();S.listening=true;toast('🎤 Listening — speak now');}catch(e){S.listening=false;}}
+  updateVoiceUI();
+}
+function updateVoiceUI(){
+  const btn=document.getElementById('mic-btn');
+  btn.classList.toggle('listening',S.listening);
+  const vi=document.getElementById('b-voice');
+  vi.textContent=S.listening?'ACTIVE':'STANDBY';
+  vi.style.color=S.listening?'var(--red)':'rgba(0,212,255,0.7)';
+  document.getElementById('voice-status').textContent=S.listening?'LISTENING...':'STANDBY';
+}
+
+// ── Waveform ──
+(function(){
+  const c=document.getElementById('waveform-canvas');
+  const ctx=c.getContext('2d');
+  let t=0;
+  function draw(){
+    c.width=c.offsetWidth||220; c.height=36;
+    const w=c.width,h=36;
+    ctx.clearRect(0,0,w,h);
+    ctx.strokeStyle=S.listening?'rgba(255,51,51,0.7)':'rgba(0,212,255,0.45)';
+    ctx.lineWidth=1.5; ctx.shadowColor=S.listening?'#ff3333':'#00d4ff'; ctx.shadowBlur=4;
+    ctx.beginPath();
+    for(let x=0;x<w;x++){
+      const amp=S.listening?10+(Math.random()*4):3;
+      const y=h/2+Math.sin(x*0.05+t)*amp;
+      x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    ctx.stroke(); t+=S.listening?0.18:0.04;
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// ── TTS ──
+const synth=window.speechSynthesis;
+let speakBarsInterval=null;
+function loadVoices(){
+  const sel=document.getElementById('voice-sel');
+  const voices=synth.getVoices().filter(v=>v.lang.startsWith('en'));
+  sel.innerHTML=voices.map(v=>`<option value="${v.name}" ${v.name===S.selectedVoice?'selected':''}>${v.name} (${v.lang})</option>`).join('');
+  if(!sel.innerHTML)sel.innerHTML='<option>Loading voices...</option>';
+}
+synth.addEventListener('voiceschanged',loadVoices);
+setTimeout(loadVoices,600);
+
+// Build speaking bars
+const sbars=document.getElementById('sbars');
+for(let i=0;i<10;i++){
+  const d=document.createElement('div');
+  d.style.cssText=`width:3px;background:var(--arc);border-radius:2px;animation:sbar 0.8s ease infinite;animation-delay:${i*0.08}s;height:3px;`;
+  sbars.appendChild(d);
+}
+const style=document.createElement('style');
+style.textContent='@keyframes sbar{0%,100%{height:3px}50%{height:16px}}';
+document.head.appendChild(style);
+
+function toggleTTS(){
+  S.tts=!S.tts;
+  document.getElementById('tts-toggle-btn').textContent='🔊 TTS '+(S.tts?'ON':'OFF');
+  document.getElementById('b-tts').textContent=S.tts?'ON':'OFF';
+  document.getElementById('b-tts').style.color=S.tts?'var(--green)':'rgba(0,212,255,0.7)';
+  toast('🔊 TTS '+(S.tts?'Enabled':'Disabled'));
+}
+function speak(text){
+  if(!S.tts)return; synth.cancel();
+  const clean=text.replace(/<[^>]*>/g,'').replace(/[◈⚡▶★]/g,'').slice(0,600);
+  const u=new SpeechSynthesisUtterance(clean);
+  if(S.selectedVoice){const v=synth.getVoices().find(v=>v.name===S.selectedVoice);if(v)u.voice=v;}
+  u.rate=0.92; u.pitch=0.88;
+  u.onstart=()=>{S.speaking=true;document.getElementById('speaking-bar').style.display='block';};
+  u.onend=u.onerror=()=>{S.speaking=false;document.getElementById('speaking-bar').style.display='none';};
+  synth.speak(u);
+}
+
+// ── Tickers ──
+const TICKS=[
+  {sym:'BTC',p:97800,c:2.1},{sym:'ETH',p:3280,c:-0.6},
+  {sym:'AAPL',p:214.5,c:0.4},{sym:'TSLA',p:251.2,c:-1.1},
+  {sym:'GOLD',p:2324,c:0.2},{sym:'SPY',p:589.4,c:0.3}
+];
+function renderTickers(){
+  const el=document.getElementById('tickers');
+  el.innerHTML=TICKS.map(t=>`
+    <div class="ticker-item" onclick="q('Give me a detailed trading analysis, prediction and signal for ${t.sym}')">
+      <span class="ticker-sym">${t.sym}</span>
+      <span style="color:white;font-size:11px;">$${t.p>999?t.p.toFixed(0):t.p.toFixed(2)}</span>
+      <span class="${t.c>=0?'up':'down'}">${t.c>=0?'+':''}${t.c.toFixed(2)}%</span>
+    </div>`).join('');
+}
+function tickerUpdate(){
+  TICKS.forEach(t=>{t.p*=(1+(Math.random()-.499)*.002);t.c+=(Math.random()-.5)*.05;});
+  renderTickers();
+}
+renderTickers(); setInterval(tickerUpdate,2500);
+
+// ── Init ──
+setTimeout(()=>{
+  appendMsg('system','◈ J.A.R.V.I.S FREE initialized. Enter a free API key above to activate AI. Get Groq key at console.groq.com (free, takes 30 seconds).');
+},300);
+</script>
+</body>
+</html>
